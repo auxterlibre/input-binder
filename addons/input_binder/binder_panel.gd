@@ -270,8 +270,11 @@ func _rebuild() -> void:
 
 
 func _restore_scroll(scroll: Vector2) -> void:
-	if _tree:
-		_tree.get_v_scroll_bar().value = scroll.y
+	if _tree == null:
+		return
+	for child in _tree.get_children(true):
+		if child is VScrollBar:
+			child.value = scroll.y
 
 
 func _remember_collapsed(item: TreeItem) -> void:
