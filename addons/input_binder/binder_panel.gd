@@ -59,6 +59,7 @@ var _pending_event := {}
 var _deadzone_before := {}
 var _deadzone_token := 0
 var _rebuild_queued := false
+var _collapsed := {}
 
 
 func _notification(what: int) -> void:
@@ -235,6 +236,10 @@ func _rebuild() -> void:
 	if selected and selected.get_metadata(0) is Dictionary:
 		selected_meta = selected.get_metadata(0)
 
+	var scroll := _tree.get_scroll()
+	if _tree.get_root():
+		_remember_collapsed(_tree.get_root())
+
 	_tree.clear()
 	var root := _tree.create_item()
 	var layout := Store.get_layout()
@@ -261,6 +266,23 @@ func _rebuild() -> void:
 		if item:
 			item.select(0)
 			_tree.scroll_to_item(item)
+	_restore_scroll.call_deferred(scroll)
+
+
+func _restore_scroll(scroll: Vector2) -> void:
+	if _tree:
+		_tree.get_v_scroll_bar().value = scroll.y
+
+
+func _remember_collapsed(item: TreeItem) -> void:
+	for child in item.get_children():
+		if child.get_child_count() > 0:
+			_collapsed[str(child.get_metadata(0))] = child.collapsed
+			_remember_collapsed(child)
+
+
+func _apply_collapsed(item: TreeItem) -> void:
+	item.collapsed = _collapsed.get(str(item.get_metadata(0)), false)
 
 
 func _add_category_item(root: TreeItem, category_name: String, actions: Array,
@@ -291,6 +313,7 @@ func _add_category_item(root: TreeItem, category_name: String, actions: Array,
 			"Remove category (its actions become uncategorized)")
 	for action in visible_actions:
 		_add_action_item(item, action, conflicts)
+	_apply_collapsed(item)
 
 
 func _add_action_item(parent: TreeItem, action: String, conflicts: Dictionary) -> void:
@@ -312,6 +335,7 @@ func _add_action_item(parent: TreeItem, action: String, conflicts: Dictionary) -
 		item.add_button(0, get_theme_icon(&"Remove", &"EditorIcons"), BTN_REMOVE, false, "Remove action")
 	for i in data.events.size():
 		_add_event_item(item, action, i, data.events[i], conflicts)
+	_apply_collapsed(item)
 
 
 func _add_event_item(parent: TreeItem, action: String, index: int, event: InputEvent,
