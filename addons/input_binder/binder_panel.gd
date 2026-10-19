@@ -25,7 +25,14 @@ class BinderTree:
 	var panel: Control
 
 	func _get_drag_data(at_position: Vector2) -> Variant:
-		return panel.tree_drag_data(at_position, self)
+		var data = panel.tree_drag_data(at_position, self)
+		if data != null:
+			drop_mode_flags = DROP_MODE_INBETWEEN | DROP_MODE_ON_ITEM
+		return data
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_DRAG_END:
+			drop_mode_flags = DROP_MODE_DISABLED
 
 	func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		return panel.tree_can_drop(at_position, data)
@@ -127,7 +134,6 @@ func _ready() -> void:
 	_tree.set_column_expand(0, true)
 	_tree.set_column_expand(1, false)
 	_tree.set_column_custom_minimum_width(1, roundi(90.0 * scale))
-	_tree.drop_mode_flags = Tree.DROP_MODE_INBETWEEN | Tree.DROP_MODE_ON_ITEM
 	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_tree.item_edited.connect(_on_item_edited)
 	_tree.button_clicked.connect(_on_button_clicked)
